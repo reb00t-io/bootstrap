@@ -1,5 +1,13 @@
 # Bootstrap
 
-Bootstrap is a lightweight repository for bootstrapping a repo for use with agents.
+Bootstrap is a tiny CLI that installs agent templates into a target repo.
 
-It includes code to initialize everything needed to continuously update a repo’s agent setup (for example, generating AGENTS.md from the source code itself).
+## Usage
+
+python bootstrap.py <repo|path>
+
+## Behavior
+
+- Copies AGENTS_TEMPLATE.md to AGENTS.md.
+- Copies AGENTS_STRUCTURE.md.
+- Optionally creates a branch, then stages, commits, and pushes with confirmation.
