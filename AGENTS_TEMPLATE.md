@@ -103,5 +103,6 @@ Only include if useful.
   - `<COMMAND>`
 
 ## 10. Pull Requests & Branching
-- Default branch: main
-- For PRs, create a branch agent/<branch_name>
+Default branch: main
+
+When a PR is requested, create a branch agent/<branch_name> and create a PR from there using gh
