@@ -102,14 +102,6 @@ Only include if useful.
 - Commands to run:
   - `<COMMAND>`
 
-## 10. Scope & Placement
-- This file applies to: `<ROOT / SUBDIRECTORY>`
-- Overrides or extensions from parent AGENTS.md:
-  - `<NONE / LIST>`
-
-## Checklist (before committing AGENTS.md)
-- [ ] All placeholders replaced
-- [ ] All commands verified
-- [ ] No generic best practices
-- [ ] No redundant README content
-- [ ] Optimized for agent consumption
+## 10. Pull Requests & Branching
+- Default branch: main
+- For PRs, create a branch agent/<branch_name>
