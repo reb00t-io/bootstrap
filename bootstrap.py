@@ -117,7 +117,7 @@ def main() -> int:
 
     if prompt_yes_no("Stage and commit the new files?"):
         run(["git", "add", "AGENTS.md", "AGENTS_STRUCTURE.md"], cwd=repo_dir)
-        commit_message = input("Commit message: ").strip() or "Add agent bootstrap files"
+        commit_message = "Add agent bootstrap files"
         run(["git", "commit", "-m", commit_message], cwd=repo_dir)
 
         if prompt_yes_no("Push the commit now?"):
