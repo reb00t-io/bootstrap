@@ -1,12 +1,4 @@
-
-
 # AGENTS.md
-
-> ⚠️ This file contains **authoritative instructions for AI agents working in this repository**.
-> All sections are expected to be filled with repo-specific, concrete information.
-> Avoid prose. Prefer bullets, commands, and file paths.
-
----
 
 ## 1. Mission & Priorities
 **Role of the agent in this repository:**
@@ -17,8 +9,6 @@
 
 **Global constraints or goals:**
 - <NON-OBVIOUS CONSTRAINTS, IF ANY>
-
----
 
 ## 2. Executable Commands (Ground Truth)
 All commands listed here must work.
@@ -38,8 +28,6 @@ All commands listed here must work.
 - Integration / e2e tests:
   - `<COMMAND>` or `N/A`
 
----
-
 ## 3. Repository Map
 **High-level structure:**
 - `<PATH>` — <WHAT LIVES HERE>
@@ -53,16 +41,12 @@ All commands listed here must work.
 **Key configuration locations:**
 - `<FILE / PATH>` — <PURPOSE>
 
----
-
 ## 4. Definition of Done
 For any change, the following must hold:
 - [ ] <REQUIRED TESTS ADDED OR UPDATED>
 - [ ] <REQUIRED CHECKS RUN>
 - [ ] <DOCS UPDATED IF BEHAVIOR CHANGED>
 - [ ] <SUMMARY / NOTES EXPECTATION>
-
----
 
 ## 5. Code Style & Conventions (Repo-Specific)
 Only list conventions that are easy to get wrong.
@@ -78,8 +62,6 @@ Only list conventions that are easy to get wrong.
 - Logging rules:
   - `<WHAT TO LOG / WHAT NOT TO LOG>`
 
----
-
 ## 6. Boundaries & Guardrails
 The agent must **not**:
 - <FORBIDDEN ACTION>
@@ -89,8 +71,6 @@ The agent must **not**:
 When unsure:
 - Prefer the smallest possible change
 - Leave a TODO with context rather than guessing
-
----
 
 ## 7. Security & Privacy Constraints
 If applicable:
@@ -105,15 +85,11 @@ If applicable:
 
 If not applicable, explicitly state: `N/A`.
 
----
-
 ## 8. Common Pitfalls & Couplings
 Things that are easy to break:
 - If you touch `<X>`, you must also update `<Y>`
 - Do not import `<FORBIDDEN IMPORT>`; use `<ALTERNATIVE>`
 - <OTHER COMMON MISTAKE>
-
----
 
 ## 9. Examples & Canonical Patterns (Optional)
 Only include if useful.
@@ -126,14 +102,10 @@ Only include if useful.
 - Commands to run:
   - `<COMMAND>`
 
----
-
 ## 10. Scope & Placement
 - This file applies to: `<ROOT / SUBDIRECTORY>`
 - Overrides or extensions from parent AGENTS.md:
   - `<NONE / LIST>`
-
----
 
 ## Checklist (before committing AGENTS.md)
 - [ ] All placeholders replaced
