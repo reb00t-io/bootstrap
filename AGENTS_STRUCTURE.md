@@ -111,13 +111,8 @@ Examples should be concrete and minimal.
 
 ---
 
-## 10. Scope & Placement Rules
-A good AGENTS.md should respect scope:
-- A root `AGENTS.md` applies globally
-- Subdirectory `AGENTS.md` files override or extend rules locally
-- Instructions should live as close as possible to where they apply
-
-Avoid one monolithic file when rules are directory-specific.
+## 10. Branches and PRs
+Branch naming conventions and whether to create PRs
 
 ---
 
