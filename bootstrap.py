@@ -87,9 +87,14 @@ def main() -> int:
     script_dir = Path(__file__).resolve().parent
     template_path = script_dir / "AGENTS_TEMPLATE.md"
     structure_path = script_dir / "AGENTS_STRUCTURE.md"
+    agent_scripts_path = script_dir / "agent_scripts"
 
     if not template_path.exists() or not structure_path.exists():
         print("Missing AGENTS_TEMPLATE.md or AGENTS_STRUCTURE.md in this repo.")
+        return 1
+
+    if not agent_scripts_path.exists():
+        print("Missing agent_scripts directory in this repo.")
         return 1
 
     agents_md = repo_dir / "AGENTS.md"
@@ -106,6 +111,13 @@ def main() -> int:
     else:
         print("Source and destination are the same for AGENTS_STRUCTURE.md; skipping.")
 
+    scripts_dest = repo_dir / "agent_scripts"
+    print("Copying agent_scripts -> agent_scripts")
+    if agent_scripts_path.resolve() != scripts_dest.resolve():
+        shutil.copytree(agent_scripts_path, scripts_dest, dirs_exist_ok=True)
+    else:
+        print("Source and destination are the same for agent_scripts; skipping.")
+
     if prompt_yes_no("Create a new branch for these commits?"):
         branch_name = input("Branch name: ").strip()
         if not branch_name:
@@ -116,7 +128,10 @@ def main() -> int:
     run(["git", "status", "--short"], cwd=repo_dir)
 
     if prompt_yes_no("Stage and commit the new files?", default=True):
-        run(["git", "add", "AGENTS.md", "AGENTS_STRUCTURE.md"], cwd=repo_dir)
+        run(
+            ["git", "add", "AGENTS.md", "AGENTS_STRUCTURE.md", "agent_scripts"],
+            cwd=repo_dir,
+        )
         commit_message = "Add agent bootstrap files"
         run(["git", "commit", "-m", commit_message], cwd=repo_dir)
 
