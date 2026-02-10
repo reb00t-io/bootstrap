@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "repo",
-        help="Git URL or 'owner/name' for the repo to clone.",
+        help="Git URL, 'owner/name', or a path to an existing checkout.",
     )
     parser.add_argument(
         "--dest",
@@ -52,17 +52,37 @@ def resolve_repo_dir(repo: str, dest: str | None) -> Path:
     return Path.cwd() / repo_name
 
 
+def resolve_existing_repo(repo: str) -> Path | None:
+    repo_path = Path(repo).expanduser()
+    if repo_path.exists() and repo_path.is_dir():
+        return repo_path.resolve()
+    return None
+
+
 def main() -> int:
     args = parse_args()
 
-    repo_dir = resolve_repo_dir(args.repo, args.dest)
+    existing_repo_dir = resolve_existing_repo(args.repo)
+    if existing_repo_dir:
+        if args.dest:
+            print("--dest cannot be used when repo is an existing directory.")
+            return 1
+        repo_dir = existing_repo_dir
+        try:
+            run(["git", "rev-parse", "--show-toplevel"], cwd=repo_dir)
+        except subprocess.CalledProcessError:
+            print(f"Not a git repository: {repo_dir}")
+            return 1
+        print(f"Using existing checkout: {repo_dir}")
+    else:
+        repo_dir = resolve_repo_dir(args.repo, args.dest)
 
-    if repo_dir.exists():
-        print(f"Destination already exists: {repo_dir}")
-        return 1
+        if repo_dir.exists():
+            print(f"Destination already exists: {repo_dir}")
+            return 1
 
-    print(f"Cloning {args.repo} into {repo_dir}...")
-    run(["git", "clone", args.repo, str(repo_dir)])
+        print(f"Cloning {args.repo} into {repo_dir}...")
+        run(["git", "clone", args.repo, str(repo_dir)])
 
     script_dir = Path(__file__).resolve().parent
     template_path = script_dir / "AGENTS_TEMPLATE.md"
@@ -74,10 +94,17 @@ def main() -> int:
 
     agents_md = repo_dir / "AGENTS.md"
     print("Copying AGENTS_TEMPLATE.md -> AGENTS.md")
-    shutil.copyfile(template_path, agents_md)
+    if template_path.resolve() != agents_md.resolve():
+        shutil.copyfile(template_path, agents_md)
+    else:
+        print("Source and destination are the same for AGENTS.md; skipping.")
 
+    structure_dest = repo_dir / "AGENTS_STRUCTURE.md"
     print("Copying AGENTS_STRUCTURE.md -> AGENTS_STRUCTURE.md")
-    shutil.copyfile(structure_path, repo_dir / "AGENTS_STRUCTURE.md")
+    if structure_path.resolve() != structure_dest.resolve():
+        shutil.copyfile(structure_path, structure_dest)
+    else:
+        print("Source and destination are the same for AGENTS_STRUCTURE.md; skipping.")
 
     if prompt_yes_no("Create a new branch for these commits?"):
         branch_name = input("Branch name: ").strip()
