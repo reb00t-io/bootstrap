@@ -120,7 +120,7 @@ def main() -> int:
         commit_message = "Add agent bootstrap files"
         run(["git", "commit", "-m", commit_message], cwd=repo_dir)
 
-        if prompt_yes_no("Push the commit now?"):
+        if prompt_yes_no("Push the commit now?", default=True):
             # Use upstream if on a named branch created by this script
             try:
                 result = subprocess.run(
