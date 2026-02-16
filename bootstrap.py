@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -118,6 +119,30 @@ def copy_tree_contents(source_dir: Path, target_dir: Path) -> None:
         shutil.copy2(source_item, target_item)
 
 
+def run_init_script(repo_dir: Path) -> bool:
+    init_script = repo_dir / "scripts" / "init.sh"
+    if not init_script.exists():
+        print(f"Warning: {init_script} not found, skipping.")
+        return False
+
+    if not sys.stdin.isatty():
+        print(
+            f"Skipping {init_script}: no interactive terminal available. "
+            "Run it manually in a shell."
+        )
+        return False
+
+    print(f"Running {init_script}...")
+    try:
+        run(["bash", str(init_script)], cwd=repo_dir)
+    except subprocess.CalledProcessError as exc:
+        print(f"Warning: {init_script} failed with exit code {exc.returncode}.")
+        print("Continue manually by running the script in your shell.")
+        return False
+
+    return True
+
+
 def main() -> int:
     args = parse_args()
     try:
@@ -131,14 +156,8 @@ def main() -> int:
         clone_template_repo(template_dir)
         copy_tree_contents(template_dir, repo_dir)
 
-    init_script = repo_dir / "scripts" / "init.sh"
-    if init_script.exists():
-        print(f"Running {init_script}...")
-        run(["bash", str(init_script)], cwd=repo_dir)
-    else:
-        print(f"Warning: {init_script} not found, skipping.")
-
-    print("Done.")
+    if run_init_script(repo_dir):
+        print("Done.")
     return 0
 
 

@@ -22,7 +22,7 @@ package-dir = {"" = "."}
 py-modules = ["bootstrap"]
 
 [tool.setuptools.packages.find]
-include = ["reb00t*"]
+include = []
 exclude = ["tests*", "docs*"]
 
 [project.optional-dependencies]
