@@ -6,7 +6,11 @@ from __future__ import annotations
 import argparse
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
+
+
+TEMPLATE_REPO = "git@github.com:reb00t-io/bootstrap-template.git"
 
 
 def run(cmd: list[str], cwd: Path | None = None) -> None:
@@ -59,102 +63,80 @@ def resolve_existing_repo(repo: str) -> Path | None:
     return None
 
 
-def main() -> int:
-    args = parse_args()
-
-    existing_repo_dir = resolve_existing_repo(args.repo)
+def prepare_repo(repo: str, dest: str | None) -> Path:
+    existing_repo_dir = resolve_existing_repo(repo)
     if existing_repo_dir:
-        if args.dest:
-            print("--dest cannot be used when repo is an existing directory.")
-            return 1
+        if dest:
+            raise ValueError("--dest cannot be used when repo is an existing directory.")
         repo_dir = existing_repo_dir
         try:
             run(["git", "rev-parse", "--show-toplevel"], cwd=repo_dir)
-        except subprocess.CalledProcessError:
-            print(f"Not a git repository: {repo_dir}")
-            return 1
+        except subprocess.CalledProcessError as exc:
+            raise ValueError(f"Not a git repository: {repo_dir}") from exc
         print(f"Using existing checkout: {repo_dir}")
-    else:
-        repo_dir = resolve_repo_dir(args.repo, args.dest)
+        return repo_dir
 
-        if repo_dir.exists():
-            print(f"Destination already exists: {repo_dir}")
-            return 1
+    repo_dir = resolve_repo_dir(repo, dest)
+    if repo_dir.exists():
+        raise ValueError(f"Destination already exists: {repo_dir}")
 
-        print(f"Cloning {args.repo} into {repo_dir}...")
-        run(["git", "clone", args.repo, str(repo_dir)])
+    print(f"Cloning {repo} into {repo_dir}...")
+    try:
+        run(["git", "clone", repo, str(repo_dir)])
+    except subprocess.CalledProcessError:
+        raise SystemExit(f"Error: failed to clone {repo}")
+    return repo_dir
 
-    script_dir = Path(__file__).resolve().parent
-    template_path = script_dir / "AGENTS_TEMPLATE.md"
-    structure_path = script_dir / "AGENTS_STRUCTURE.md"
-    agent_scripts_path = script_dir / "agent_scripts"
 
-    if not template_path.exists() or not structure_path.exists():
-        print("Missing AGENTS_TEMPLATE.md or AGENTS_STRUCTURE.md in this repo.")
-        return 1
+def clone_template_repo(tmp_dir: Path) -> None:
+    print(f"Cloning {TEMPLATE_REPO} into {tmp_dir}...")
+    try:
+        run(["git", "clone", TEMPLATE_REPO, str(tmp_dir)])
+    except subprocess.CalledProcessError:
+        raise SystemExit(f"Error: failed to clone template repo {TEMPLATE_REPO}")
 
-    if not agent_scripts_path.exists():
-        print("Missing agent_scripts directory in this repo.")
-        return 1
+    git_dir = tmp_dir / ".git"
+    if git_dir.exists():
+        shutil.rmtree(git_dir)
 
-    agents_md = repo_dir / "AGENTS.md"
-    print("Copying AGENTS_TEMPLATE.md -> AGENTS.md")
-    if template_path.resolve() != agents_md.resolve():
-        shutil.copyfile(template_path, agents_md)
-    else:
-        print("Source and destination are the same for AGENTS.md; skipping.")
 
-    structure_dest = repo_dir / "AGENTS_STRUCTURE.md"
-    print("Copying AGENTS_STRUCTURE.md -> AGENTS_STRUCTURE.md")
-    if structure_path.resolve() != structure_dest.resolve():
-        shutil.copyfile(structure_path, structure_dest)
-    else:
-        print("Source and destination are the same for AGENTS_STRUCTURE.md; skipping.")
+def copy_tree_contents(source_dir: Path, target_dir: Path) -> None:
+    for source_item in source_dir.iterdir():
+        target_item = target_dir / source_item.name
 
-    scripts_dest = repo_dir / "agent_scripts"
-    print("Copying agent_scripts -> agent_scripts")
-    if agent_scripts_path.resolve() != scripts_dest.resolve():
-        shutil.copytree(agent_scripts_path, scripts_dest, dirs_exist_ok=True)
-    else:
-        print("Source and destination are the same for agent_scripts; skipping.")
+        if source_item.is_dir():
+            if target_item.exists() and not target_item.is_dir():
+                target_item.unlink()
+            shutil.copytree(source_item, target_item, dirs_exist_ok=True)
+            continue
 
-    if prompt_yes_no("Create a new branch for these commits?"):
-        branch_name = input("Branch name: ").strip()
-        if not branch_name:
-            print("Branch name is required. Aborting.")
-            return 1
-        run(["git", "checkout", "-b", branch_name], cwd=repo_dir)
-
-    run(["git", "status", "--short"], cwd=repo_dir)
-
-    if prompt_yes_no("Stage and commit the new files?", default=True):
-        run(
-            ["git", "add", "AGENTS.md", "AGENTS_STRUCTURE.md", "agent_scripts"],
-            cwd=repo_dir,
-        )
-        commit_message = "Add agent bootstrap files"
-        run(["git", "commit", "-m", commit_message], cwd=repo_dir)
-
-        if prompt_yes_no("Push the commit now?", default=True):
-            # Use upstream if on a named branch created by this script
-            try:
-                result = subprocess.run(
-                    ["git", "branch", "--show-current"],
-                    cwd=repo_dir,
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-                current_branch = result.stdout.strip()
-            except subprocess.CalledProcessError:
-                current_branch = ""
-
-            if current_branch:
-                run(["git", "push", "-u", "origin", current_branch], cwd=repo_dir)
+        if target_item.exists():
+            if target_item.is_dir():
+                shutil.rmtree(target_item)
             else:
-                run(["git", "push"], cwd=repo_dir)
+                target_item.unlink()
+        shutil.copy2(source_item, target_item)
+
+
+def main() -> int:
+    args = parse_args()
+    try:
+        repo_dir = prepare_repo(args.repo, args.dest)
+    except ValueError as exc:
+        print(exc)
+        return 1
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        template_dir = Path(tmp_dir) / "template"
+        clone_template_repo(template_dir)
+        copy_tree_contents(template_dir, repo_dir)
+
+    init_script = repo_dir / "scripts" / "init.sh"
+    if init_script.exists():
+        print(f"Running {init_script}...")
+        run(["bash", str(init_script)], cwd=repo_dir)
     else:
-        print("Skipping commit and push.")
+        print(f"Warning: {init_script} not found, skipping.")
 
     print("Done.")
     return 0
