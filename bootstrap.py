@@ -43,11 +43,6 @@ def parse_args() -> argparse.Namespace:
         "--dest",
         help="Destination directory (default: derived from repo).",
     )
-    parser.add_argument(
-        "--no-init",
-        action="store_true",
-        help="Skip running scripts/init.sh after bootstrapping.",
-    )
     return parser.parse_args()
 
 
@@ -161,7 +156,7 @@ def main() -> int:
         clone_template_repo(template_dir)
         copy_tree_contents(template_dir, repo_dir)
 
-    if not args.no_init and run_init_script(repo_dir):
+    if run_init_script(repo_dir):
         print("Done.")
     return 0
 
