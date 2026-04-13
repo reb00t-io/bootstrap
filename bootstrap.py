@@ -43,7 +43,15 @@ def parse_args() -> argparse.Namespace:
         "--dest",
         help="Destination directory (default: derived from repo).",
     )
-    return parser.parse_args()
+    argv = sys.argv[1:]
+    if "--" in argv:
+        split = argv.index("--")
+        args = parser.parse_args(argv[:split])
+        args.init_args = argv[split + 1:]
+    else:
+        args = parser.parse_args(argv)
+        args.init_args = []
+    return args
 
 
 def resolve_repo_dir(repo: str, dest: str | None) -> Path:
@@ -119,13 +127,13 @@ def copy_tree_contents(source_dir: Path, target_dir: Path) -> None:
         shutil.copy2(source_item, target_item)
 
 
-def run_init_script(repo_dir: Path) -> bool:
+def run_init_script(repo_dir: Path, init_args: list[str] | None = None) -> bool:
     init_script = repo_dir / "scripts" / "init.sh"
     if not init_script.exists():
         print(f"Warning: {init_script} not found, skipping.")
         return False
 
-    if not sys.stdin.isatty():
+    if not init_args and not sys.stdin.isatty():
         print(
             f"Skipping {init_script}: no interactive terminal available. "
             "Run it manually in a shell."
@@ -134,7 +142,7 @@ def run_init_script(repo_dir: Path) -> bool:
 
     print(f"Running {init_script}...")
     try:
-        run(["bash", str(init_script)], cwd=repo_dir)
+        run(["bash", str(init_script)] + (init_args or []), cwd=repo_dir)
     except subprocess.CalledProcessError as exc:
         print(f"Warning: {init_script} failed with exit code {exc.returncode}.")
         print("Continue manually by running the script in your shell.")
@@ -156,7 +164,7 @@ def main() -> int:
         clone_template_repo(template_dir)
         copy_tree_contents(template_dir, repo_dir)
 
-    if run_init_script(repo_dir):
+    if run_init_script(repo_dir, args.init_args):
         print("Done.")
     return 0
 
